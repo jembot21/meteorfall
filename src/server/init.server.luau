@@ -51,8 +51,8 @@ local function finishRound()
 	pushAll()
 end
 
-Hazards.onHit = function(player, died)
-	toClient:FireClient(player, "Hit", died)
+Hazards.onHit = function(player, died, blocked)
+	toClient:FireClient(player, "Hit", died, blocked)
 	pushState(player)
 	if died and #State.alivePlayers() == 0 then
 		task.delay(1.2, finishRound)
@@ -61,6 +61,11 @@ end
 
 Orbs.onCollect = function(player)
 	toClient:FireClient(player, "Orb")
+	pushState(player)
+end
+
+Orbs.onShield = function(player)
+	toClient:FireClient(player, "Shield")
 	pushState(player)
 end
 
@@ -109,6 +114,7 @@ Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function(character)
 		local humanoid = character:WaitForChild("Humanoid")
 		humanoid.WalkSpeed = 20
+		Orbs.syncShield(player)
 		local rec = State.record(player)
 		if rec.inRound and rec.alive then
 			task.wait(0.2)

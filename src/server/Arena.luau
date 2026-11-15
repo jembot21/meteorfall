@@ -74,10 +74,16 @@ local function buildIsland(root)
 	plate.Shape = Enum.PartType.Cylinder
 	plate.CanCollide = true
 
-	-- A glowing ring inlaid in the floor marks the play circle.
+	-- Glowing rings inlaid in the floor mark the play circle and give the
+	-- dark stone some geometry to catch the light.
 	local inlay = makePart(root, "PlayRing", Vector3.new(0.18, 64, 64), CFrame.new(0, 0.24, 0) * CFrame.Angles(0, 0, math.rad(90)), VIOLET, Enum.Material.Neon)
 	inlay.Shape = Enum.PartType.Cylinder
 	inlay.CanCollide = false
+	for _, ring in { { 34, CYAN }, { 86, MAGENTA } } do
+		local r = makePart(root, "FloorRing", Vector3.new(0.14, ring[1], ring[1]), CFrame.new(0, 0.22, 0) * CFrame.Angles(0, 0, math.rad(90)), ring[2], Enum.Material.Neon)
+		r.Shape = Enum.PartType.Cylinder
+		r.CanCollide = false
+	end
 
 	-- Rim: alternating neon segments, high enough to read as a wall of light.
 	local segments = 28
@@ -135,6 +141,27 @@ local function buildShards(root)
 	end
 end
 
+-- The night above the island: a dome of small neon stars and one low,
+-- pale moon, so the sky the meteors fall from is worth looking at.
+local function buildSkyDressing(root)
+	local folder = Instance.new("Folder")
+	folder.Name = "Sky"
+	folder.Parent = root
+	for i = 1, 44 do
+		local a = (i / 44) * math.pi * 2 + i * 1.7
+		local dist = 95 + (i % 5) * 16
+		local y = 34 + (i % 7) * 11
+		local size = 0.7 + (i % 3) * 0.5
+		local color = (i % 4 == 0) and MAGENTA or ((i % 4 == 1) and CYAN or Color3.fromRGB(226, 228, 255))
+		local star = makePart(folder, "Star", Vector3.new(size, size, size), CFrame.new(math.cos(a) * dist, y, math.sin(a) * dist), color, Enum.Material.Neon)
+		star.Shape = Enum.PartType.Ball
+		star.CanCollide = false
+	end
+	local moon = makePart(folder, "Moon", Vector3.new(16, 16, 1), CFrame.new(-70, 52, -95) * CFrame.Angles(0, math.rad(36), 0), Color3.fromRGB(238, 240, 255), Enum.Material.Neon)
+	moon.Shape = Enum.PartType.Cylinder
+	moon.CanCollide = false
+end
+
 function Arena.build()
 	dressSky()
 
@@ -152,6 +179,7 @@ function Arena.build()
 	buildIsland(root)
 	buildPillars(root)
 	buildShards(root)
+	buildSkyDressing(root)
 
 	local glow = Instance.new("PointLight")
 	glow.Name = "IslandGlow"

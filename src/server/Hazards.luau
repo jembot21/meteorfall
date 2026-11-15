@@ -8,10 +8,11 @@ local TweenService = game:GetService("TweenService")
 
 local State = require(script.Parent.State)
 local Arena = require(script.Parent.Arena)
+local Orbs = require(script.Parent.Orbs)
 
 local Hazards = {}
 
--- Set by the bootstrap: function(player, died) — the client feedback for a hit.
+-- Set by the bootstrap: function(player, died, blocked) — client feedback.
 Hazards.onHit = nil
 
 local DANGER = Color3.fromRGB(255, 70, 60)
@@ -85,6 +86,16 @@ local function blast(pos, radius)
 	light.Range = 26
 	light.Brightness = 3
 	light.Parent = shell
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Color = ColorSequence.new(EMBER, Color3.fromRGB(255, 200, 90))
+	sparks.Size = NumberSequence.new(0.8)
+	sparks.Transparency = NumberSequence.new(0.15)
+	sparks.Lifetime = NumberRange.new(0.4, 0.8)
+	sparks.Speed = NumberRange.new(16, 30)
+	sparks.SpreadAngle = Vector2.new(180, 180)
+	sparks.Rate = 0
+	sparks.Parent = shell
+	sparks:Emit(26)
 	local grow = TweenService:Create(shell, TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = Vector3.new(radius * 2.1, radius * 2.1, radius * 2.1),
 		Transparency = 1,
@@ -104,20 +115,25 @@ local function blast(pos, radius)
 		mark:Destroy()
 	end)
 
-	-- Whoever is standing in it pays a heart and gets thrown out of it.
+	-- Whoever is standing in it pays — a shield if they hold one, else a
+	-- heart — and gets thrown out of it either way, shields a little softer.
 	for _, player in State.alivePlayers() do
 		local hrp = rootPart(player)
 		if hrp then
 			local away = hrp.Position - (pos + Vector3.new(0, 1, 0))
 			if away.Magnitude <= radius + 1.5 then
-				local died = State.hurt(player)
+				local blocked, died = State.hurt(player)
+				if blocked then
+					Orbs.syncShield(player)
+				end
 				local flat = Vector3.new(away.X, 0, away.Z)
 				if flat.Magnitude < 0.5 then
 					flat = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5)
 				end
-				hrp.AssemblyLinearVelocity = flat.Unit * 50 + Vector3.new(0, 36, 0)
+				local push = blocked and 34 or 50
+				hrp.AssemblyLinearVelocity = flat.Unit * push + Vector3.new(0, blocked and 24 or 36, 0)
 				if Hazards.onHit then
-					Hazards.onHit(player, died)
+					Hazards.onHit(player, died, blocked)
 				end
 			end
 		end
@@ -143,6 +159,15 @@ local function meteorFall(pos, radius)
 	fire.Color = EMBER
 	fire.SecondaryColor = Color3.fromRGB(255, 200, 90)
 	fire.Parent = meteor
+	local trail = Instance.new("ParticleEmitter")
+	trail.Color = ColorSequence.new(EMBER, Color3.fromRGB(120, 60, 160))
+	trail.Size = NumberSequence.new(1.6)
+	trail.Transparency = NumberSequence.new(0.3)
+	trail.Lifetime = NumberRange.new(0.3, 0.55)
+	trail.Rate = 90
+	trail.Speed = NumberRange.new(0.5, 1.5)
+	trail.SpreadAngle = Vector2.new(30, 30)
+	trail.Parent = meteor
 	local fall = TweenService:Create(meteor, TweenInfo.new(0.38, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		CFrame = CFrame.new(pos + Vector3.new(0, 1.2, 0)),
 	})

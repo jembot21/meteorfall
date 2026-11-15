@@ -5,6 +5,7 @@
 
 local State = require(script.Parent.State)
 local Hazards = require(script.Parent.Hazards)
+local Orbs = require(script.Parent.Orbs)
 
 local Waves = {}
 
@@ -49,11 +50,22 @@ local function survivalTick()
 	end)
 end
 
+-- Every fourth wave the sky turns: a storm wave. Strikes come a third
+-- faster and thicker, and the orbs rain faster too — risk and reward together.
+local function isStorm(wave)
+	return wave % 4 == 0
+end
+
 local function directWave(wave)
+	local storm = isStorm(wave)
 	local budget = 5 + wave * 3
 	local interval = math.max(0.55, 1.45 - wave * 0.08)
 	local radius = (wave >= 5) and 7.6 or 7
 	local telegraph = math.max(0.85, 1.12 - wave * 0.015)
+	if storm then
+		budget = math.floor(budget * 1.35)
+		interval *= 0.68
+	end
 
 	for _ = 1, budget do
 		if State.phase ~= "Playing" then
@@ -86,7 +98,12 @@ function Waves.start()
 		while running and State.phase == "Playing" do
 			State.wave += 1
 			local wave = State.wave
-			banner("WAVE " .. wave, WAVE_SUBLINES[wave] or "Faster. Meaner.")
+			Orbs.setStorm(isStorm(wave))
+			if isStorm(wave) then
+				banner("STORM WAVE " .. wave, "The rain doubles down")
+			else
+				banner("WAVE " .. wave, WAVE_SUBLINES[wave] or "Faster. Meaner.")
+			end
 			task.wait(1.6)
 			directWave(wave)
 

@@ -19,7 +19,7 @@ end
 function State.record(player)
 	local rec = State.players[player]
 	if not rec then
-		rec = { hearts = MAX_HEARTS, score = 0, combo = 0, best = 0, alive = false, inRound = false }
+		rec = { hearts = MAX_HEARTS, score = 0, combo = 0, best = 0, alive = false, inRound = false, shield = false }
 		State.players[player] = rec
 	end
 	return rec
@@ -38,6 +38,7 @@ function State.beginRound(roster)
 		rec.hearts = MAX_HEARTS
 		rec.score = 0
 		rec.combo = 0
+		rec.shield = false
 		rec.alive = true
 		rec.inRound = true
 	end
@@ -78,9 +79,21 @@ function State.collectOrb(player)
 	return State.addScore(player, ORB_BASE * rec.combo)
 end
 
--- A hit costs a heart and the combo. Returns true when the player is out.
+-- A shield orb's gift: the next blast breaks the shield instead of a heart.
+function State.giveShield(player)
+	local rec = State.record(player)
+	rec.shield = true
+end
+
+-- A hit costs a heart and the combo — unless a shield eats it, which costs
+-- only the shield and half the combo. Returns (blocked, died).
 function State.hurt(player)
 	local rec = State.record(player)
+	if rec.shield then
+		rec.shield = false
+		rec.combo = math.floor(rec.combo / 2)
+		return true, false
+	end
 	rec.hearts -= 1
 	rec.combo = 0
 	if rec.hearts <= 0 then
@@ -88,9 +101,9 @@ function State.hurt(player)
 		if rec.score > rec.best then
 			rec.best = rec.score
 		end
-		return true
+		return false, true
 	end
-	return false
+	return false, false
 end
 
 function State.heal(player)
@@ -111,6 +124,7 @@ function State.snapshot(player)
 		best = rec.best,
 		alive = rec.alive,
 		inRound = rec.inRound,
+		shield = rec.shield,
 	}
 end
 
