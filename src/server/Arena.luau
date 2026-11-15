@@ -95,13 +95,10 @@ local function buildIsland(root)
 		seg.CanCollide = true
 	end
 
-	-- An invisible cylinder wall above the rim: nobody leaves the island.
-	local wall = makePart(root, "Wall", Vector3.new(16, (Arena.RADIUS + 1) * 2, (Arena.RADIUS + 1) * 2), CFrame.new(0, 8, 0) * CFrame.Angles(0, 0, math.rad(90)), INK)
-	wall.Shape = Enum.PartType.Cylinder
-	wall.Transparency = 1
-	wall.CanCollide = true
-	wall.CanQuery = false
-	wall.CanTouch = false
+	-- Nobody leaves the island: there is deliberately no solid wall part
+	-- around the arena — the bootstrap runs a soft boundary that sets back
+	-- anyone who slips past the rim, so no invisible geometry can ever
+	-- interfere with a character standing inside the arena.
 
 	-- Spawn pad at the centre.
 	local pad = makePart(root, "SpawnPad", Vector3.new(0.4, 13, 13), CFrame.new(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), CYAN, Enum.Material.Neon)

@@ -80,8 +80,14 @@ local function placeAtPad(player, slot)
 	local hrp = character and character:FindFirstChild("HumanoidRootPart")
 	if hrp then
 		local angle = (slot % 8) / 8 * math.pi * 2
-		hrp.CFrame = CFrame.new(math.cos(angle) * 4, 2.5, math.sin(angle) * 4)
+		-- Dropped from well above the pad: a low teleport can leave a tall
+		-- avatar's feet inside the floor plate, wedged before it ever moves.
+		hrp.CFrame = CFrame.new(math.cos(angle) * 4, 6.5, math.sin(angle) * 4)
 		hrp.AssemblyLinearVelocity = Vector3.zero
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
 	end
 end
 
@@ -132,16 +138,24 @@ Players.PlayerRemoving:Connect(function(player)
 	end
 end)
 
--- Nobody leaves the island: a character that somehow slips past the rim is
--- set back on the pad instead of falling forever.
+-- Nobody leaves the island: a soft boundary, no geometry. A character that
+-- falls off the world is set back on the pad; one that slips past the rim
+-- is set back inside it, at the same angle and height.
 task.spawn(function()
 	while true do
 		task.wait(0.25)
 		for _, player in Players:GetPlayers() do
 			local character = player.Character
 			local hrp = character and character:FindFirstChild("HumanoidRootPart")
-			if hrp and hrp.Position.Y < -25 then
-				placeAtPad(player, player.UserId)
+			if hrp then
+				local pos = hrp.Position
+				local flat = Vector3.new(pos.X, 0, pos.Z)
+				if pos.Y < -25 then
+					placeAtPad(player, player.UserId)
+				elseif flat.Magnitude > Arena.RADIUS - 1 then
+					local back = flat.Unit * (Arena.RADIUS - 4)
+					hrp.CFrame = CFrame.new(back.X, pos.Y, back.Z)
+				end
 			end
 		end
 	end

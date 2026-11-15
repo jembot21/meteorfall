@@ -8,6 +8,14 @@
 
 Everything is code: the island, pillars and sky dressing are generated at runtime, and all UI (start panel, HUD, game-over standings) is built in Luau. Server modules are one job each — `State` (the single round state), `Arena` (the island), `Hazards` (meteor strikes), `Orbs` (combo and shield pickups), `Waves` (the wave director) — with the client split into a router, the HUD and the camera-and-dash effects.
 
+One hard-won detail: the arena has no invisible wall. An early build ringed
+the island with a solid transparent cylinder to keep players in — and a
+spawning character could end up wedged inside its physics and unable to
+move. Containment is now a soft boundary in the bootstrap (anyone slipping
+past the rim is set back inside it, no geometry involved), and players drop
+onto the spawn pad from higher up so nobody starts a round clipped into the
+floor.
+
 Play it live: https://www.roblox.com/games/116123234007248/Meteorfall
 
 ## Run it
